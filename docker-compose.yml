@@ -1,0 +1,18 @@
+version: '3.9'
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  streamlit_app:
+    build: .
+    container_name: streamlit-app
+    ports:
+      - "8501:8501"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
