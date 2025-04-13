@@ -1376,11 +1376,144 @@ def state_setter_impl(current_data: Dict[str, Optional[SPValueType]], all_keys: 
 
     st.divider()
 
-    # --- Set Values Button Logic ---
-    if st.button("Set Configured Values", type="primary"):
-        success_count, error_count = 0, 0
-        errors, keys_to_set = [], {}
+    # # --- Set Values Button Logic ---
+    # if st.button("Set Values", type="primary"):
+    #     success_count, error_count = 0, 0
+    #     errors, keys_to_set = [], {}
 
+    #     for item in st.session_state.items_to_set:
+    #         key = item["key"]
+    #         if not key: continue # Skip items where no key is selected
+
+    #         target_type_name = item["current_type_name"]
+    #         parsed_spvalue = None # Initialize
+
+    #         try:
+    #             # --- PARSE based on detected type ---
+    #             if target_type_name == "MapOrUnknown":
+    #                 # Parse the interactive map pairs
+    #                 parsed_pairs_list: List[Tuple[SPValueType, SPValueType]] = []
+    #                 valid_map = True
+    #                 for pair_data in item['map_pairs']:
+    #                     key_type_str = pair_data['key_type']
+    #                     key_str_val = pair_data['key_str']
+    #                     value_type_str = pair_data['value_type']
+    #                     value_str_val = pair_data['value_str']
+
+    #                     key_type_cls = get_target_type_class(key_type_str)
+    #                     value_type_cls = get_target_type_class(value_type_str)
+
+    #                     if not key_type_cls or not value_type_cls:
+    #                          errors.append(f"Key '{key}': Invalid type specified in map pair: KType={key_type_str}, VType={value_type_str}")
+    #                          valid_map = False; break
+
+    #                     # Use parse_input_to_spvalue to handle 'UNKNOWN' and basic parsing
+    #                     parsed_key = parse_input_to_spvalue(key_str_val, key_type_cls)
+    #                     parsed_value = parse_input_to_spvalue(value_str_val, value_type_cls)
+
+    #                     if parsed_key is None or parsed_value is None:
+    #                          errors.append(f"Key '{key}': Failed to parse map pair K='{key_str_val}' as {key_type_str}, V='{value_str_val}' as {value_type_str}")
+    #                          valid_map = False; break
+
+    #                     parsed_pairs_list.append((parsed_key, parsed_value))
+
+    #                 if valid_map:
+    #                     parsed_spvalue = MapOrUnknown(value=parsed_pairs_list)
+    #                 else:
+    #                      error_count += 1; continue # Skip serialization/setting for this key
+
+    #             elif target_type_name == "ArrayOrUnknown":
+    #                 # Parse the interactive array items
+    #                 parsed_items_list: List[SPValueType] = []
+    #                 valid_array = True
+    #                 for item_data in item['array_items']:
+    #                     item_type_str = item_data['item_type']
+    #                     item_str_val = item_data['item_str']
+    #                     item_type_cls = get_target_type_class(item_type_str)
+
+    #                     if not item_type_cls:
+    #                          errors.append(f"Key '{key}': Invalid type specified in array item: Type={item_type_str}")
+    #                          valid_array = False; break
+
+    #                     parsed_item = parse_input_to_spvalue(item_str_val, item_type_cls)
+    #                     if parsed_item is None:
+    #                          errors.append(f"Key '{key}': Failed to parse array item V='{item_str_val}' as {item_type_str}")
+    #                          valid_array = False; break
+
+    #                     parsed_items_list.append(parsed_item)
+
+    #                 if valid_array:
+    #                     parsed_spvalue = ArrayOrUnknown(value=parsed_items_list)
+    #                 else:
+    #                     error_count += 1; continue # Skip serialization/setting
+
+    #             else: # Simple types or new key (defaulting to String)
+    #                 value_str = item["value_str"]
+    #                 # Get the actual class (e.g., StringOrUnknown)
+    #                 target_cls = globals().get(target_type_name) if target_type_name != "Unknown" else StringOrUnknown
+    #                 parsed_spvalue = parse_input_to_spvalue(value_str, target_cls)
+    #                 if parsed_spvalue is None:
+    #                      errors.append(f"Key '{key}': Failed to parse input '{value_str[:50]}...' for type {target_type_name}")
+    #                      error_count += 1; continue
+
+    #             # --- SERIALIZE ---
+    #             if parsed_spvalue is not None:
+    #                 serialized_json = serialize_spvalue(parsed_spvalue)
+    #                 if serialized_json is None:
+    #                     errors.append(f"Key '{key}': Failed to serialize parsed value: {parsed_spvalue}")
+    #                     error_count += 1; continue
+    #                 keys_to_set[key] = serialized_json
+    #             # else: Error handled during parsing phase
+
+    #         except Exception as e:
+    #              logging.error(f"Unexpected error processing variable '{key}': {e}", exc_info=True)
+    #              errors.append(f"Key '{key}': Unexpected error during processing: {e}")
+    #              error_count += 1
+    #              continue # Skip this key
+
+    #     # --- Execution Logic (Redis Pipeline - unchanged) ---
+    #     if not keys_to_set and not errors:
+    #          st.warning("No valid variable configurations to set.")
+    #     elif keys_to_set:
+    #          try:
+    #              # ... (pipeline execution remains the same) ...
+    #              pipe = r.pipeline()
+    #              for key, json_val in keys_to_set.items():
+    #                 pipe.set(key, json_val)
+    #                 logging.info(f"Pipeline SET: Key='{key}', Value='{json_val[:100]}...'")
+    #              results = pipe.execute()
+    #              # ... (result checking remains the same) ...
+
+    #              # Clear cache and rerun ONLY if something was successfully set
+    #              if success_count > 0:
+    #                 st.cache_data.clear() # Clear cache if used
+    #                 # Clear the config state ONLY IF successful? Or always? Clear always for now.
+    #                 # st.session_state.items_to_set = [] # Optionally reset the form on success
+    #                 st.rerun()
+
+
+    #          except redis.RedisError as e:
+    #               st.error(f"A Redis error occurred during the SET operation: {e}")
+    #               logging.error(f"Redis pipeline SET error: {e}", exc_info=True)
+    #          except Exception as e:
+    #               st.error(f"An unexpected error occurred during the SET operation: {e}")
+    #               logging.error(f"Unexpected pipeline SET error: {e}", exc_info=True)
+
+    #     # --- Display Errors ---
+    #     if errors:
+    #          st.error(f"Found {error_count + len(errors)} error(s) preventing setting some values:")
+    #          for error in errors: st.error(error)
+    #     elif not keys_to_set and success_count == 0: # No attempt made, no prior errors
+    #          pass # Covered by the "No valid configurations" warning
+
+    # --- Set Values Button Logic ---
+    if st.button("Set Values", type="primary"): # Matched button label from your provided code
+        # Initialize counts and lists for this run
+        errors, keys_to_set = [], {}
+        # Note: success_count and error_count from outer scope are not directly used for Redis results here
+        # We will calculate success based on Redis pipeline results specifically
+
+        # --- Parsing and Serialization Loop ---
         for item in st.session_state.items_to_set:
             key = item["key"]
             if not key: continue # Skip items where no key is selected
@@ -1407,7 +1540,6 @@ def state_setter_impl(current_data: Dict[str, Optional[SPValueType]], all_keys: 
                              errors.append(f"Key '{key}': Invalid type specified in map pair: KType={key_type_str}, VType={value_type_str}")
                              valid_map = False; break
 
-                        # Use parse_input_to_spvalue to handle 'UNKNOWN' and basic parsing
                         parsed_key = parse_input_to_spvalue(key_str_val, key_type_cls)
                         parsed_value = parse_input_to_spvalue(value_str_val, value_type_cls)
 
@@ -1420,7 +1552,8 @@ def state_setter_impl(current_data: Dict[str, Optional[SPValueType]], all_keys: 
                     if valid_map:
                         parsed_spvalue = MapOrUnknown(value=parsed_pairs_list)
                     else:
-                         error_count += 1; continue # Skip serialization/setting for this key
+                         # error_count += 1 # Accumulate errors in the 'errors' list instead
+                         continue # Skip serialization/setting for this key
 
                 elif target_type_name == "ArrayOrUnknown":
                     # Parse the interactive array items
@@ -1445,52 +1578,87 @@ def state_setter_impl(current_data: Dict[str, Optional[SPValueType]], all_keys: 
                     if valid_array:
                         parsed_spvalue = ArrayOrUnknown(value=parsed_items_list)
                     else:
-                        error_count += 1; continue # Skip serialization/setting
+                        # error_count += 1
+                        continue # Skip serialization/setting
 
                 else: # Simple types or new key (defaulting to String)
                     value_str = item["value_str"]
-                    # Get the actual class (e.g., StringOrUnknown)
                     target_cls = globals().get(target_type_name) if target_type_name != "Unknown" else StringOrUnknown
                     parsed_spvalue = parse_input_to_spvalue(value_str, target_cls)
                     if parsed_spvalue is None:
                          errors.append(f"Key '{key}': Failed to parse input '{value_str[:50]}...' for type {target_type_name}")
-                         error_count += 1; continue
+                         # error_count += 1
+                         continue
 
                 # --- SERIALIZE ---
                 if parsed_spvalue is not None:
                     serialized_json = serialize_spvalue(parsed_spvalue)
                     if serialized_json is None:
                         errors.append(f"Key '{key}': Failed to serialize parsed value: {parsed_spvalue}")
-                        error_count += 1; continue
+                        # error_count += 1
+                        continue
                     keys_to_set[key] = serialized_json
                 # else: Error handled during parsing phase
 
             except Exception as e:
                  logging.error(f"Unexpected error processing variable '{key}': {e}", exc_info=True)
                  errors.append(f"Key '{key}': Unexpected error during processing: {e}")
-                 error_count += 1
+                 # error_count += 1
                  continue # Skip this key
 
-        # --- Execution Logic (Redis Pipeline - unchanged) ---
+        # --- Execution Logic (Redis Pipeline) ---
         if not keys_to_set and not errors:
              st.warning("No valid variable configurations to set.")
         elif keys_to_set:
+             # Initialize success count specific to this Redis operation
+             current_set_success_count = 0
              try:
-                 # ... (pipeline execution remains the same) ...
+                 # Setup and execute the pipeline
                  pipe = r.pipeline()
                  for key, json_val in keys_to_set.items():
                     pipe.set(key, json_val)
                     logging.info(f"Pipeline SET: Key='{key}', Value='{json_val[:100]}...'")
                  results = pipe.execute()
-                 # ... (result checking remains the same) ...
 
-                 # Clear cache and rerun ONLY if something was successfully set
-                 if success_count > 0:
-                    st.cache_data.clear() # Clear cache if used
-                    # Clear the config state ONLY IF successful? Or always? Clear always for now.
-                    # st.session_state.items_to_set = [] # Optionally reset the form on success
-                    st.rerun()
+                 # --- Check Redis Results ---
+                 failed_sets = []
+                 set_keys = list(keys_to_set.keys())
+                 for i, result in enumerate(results):
+                     key = set_keys[i]
+                     if result: # Redis SET returns True on success
+                         current_set_success_count += 1 # Increment actual success count
+                     else:
+                         failed_sets.append(key)
+                         # Add error message only if not already present from parsing stage
+                         error_msg = f"Key '{key}': Redis SET command failed."
+                         if error_msg not in errors:
+                             errors.append(error_msg)
+                         logging.error(f"Redis SET command failed for key '{key}'. Check Redis logs.")
 
+                 # --- Display Feedback ---
+                 if current_set_success_count > 0:
+                     # Clear cache *before* showing success message if not rerunning
+                     if 'st' in sys.modules and hasattr(st, 'cache_data') and hasattr(st.cache_data, 'clear'):
+                          st.cache_data.clear() # Clear cache so next manual refresh gets new data
+
+                     # Display the success message - this will now persist
+                     st.success(f"Successfully set {current_set_success_count} variable(s).")
+
+                     # --- REMOVED st.rerun() ---
+                     # No automatic rerun here, message will stay visible.
+
+                 # Displaying failures (if any)
+                 if failed_sets:
+                     # Ensure we show the specific SET failures distinctly if needed
+                     set_failure_errors = [e for e in errors if "Redis SET command failed" in e]
+                     if set_failure_errors: # Check if there are actual SET failures to report
+                          st.error(f"Failed to execute Redis SET for {len(failed_sets)} variable(s): {', '.join(failed_sets)}")
+
+                 # Display prior parsing/serialization errors if they existed (and weren't SET errors)
+                 prior_errors = [e for e in errors if "Redis SET command failed" not in e]
+                 if prior_errors:
+                     st.error("Additional errors occurred before sending to Redis:")
+                     for error in prior_errors: st.error(error)
 
              except redis.RedisError as e:
                   st.error(f"A Redis error occurred during the SET operation: {e}")
@@ -1499,12 +1667,16 @@ def state_setter_impl(current_data: Dict[str, Optional[SPValueType]], all_keys: 
                   st.error(f"An unexpected error occurred during the SET operation: {e}")
                   logging.error(f"Unexpected pipeline SET error: {e}", exc_info=True)
 
-        # --- Display Errors ---
-        if errors:
-             st.error(f"Found {error_count + len(errors)} error(s) preventing setting some values:")
-             for error in errors: st.error(error)
-        elif not keys_to_set and success_count == 0: # No attempt made, no prior errors
-             pass # Covered by the "No valid configurations" warning
+        # --- Display Errors if no set was attempted but errors occurred during parsing ---
+        elif errors:
+             st.error(f"Found {len(errors)} error(s) preventing setting values:")
+             # Use set to avoid potential duplicates if error logic added them multiple times
+             displayed_errors = set()
+             for error in errors:
+                 if error not in displayed_errors:
+                     st.error(error)
+                     displayed_errors.add(error)
+        # If not keys_to_set and no errors, the warning above handles it.
 
 
 # --- Rest of the file (read_all_data, state_viewer, state_details, main, etc.) remains unchanged ---
