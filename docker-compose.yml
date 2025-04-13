@@ -1,14 +1,17 @@
-version: '3.9'
+version: "3.9"
+
 services:
   redis:
     image: redis:latest
     container_name: redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    networks:
+      - private-net
 
-  streamlit_app:
-    build: .
-    container_name: streamlit-app
+  streamlit:
+    build: /home/endre/photoneo_ws/src/micro_sp_ui/
+    container_name: streamlit
     ports:
       - "8501:8501"
     depends_on:
@@ -16,3 +19,10 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+    networks:
+      - private-net
+
+# Define the custom network used by all services
+networks:
+  private-net:
+    driver: bridge
