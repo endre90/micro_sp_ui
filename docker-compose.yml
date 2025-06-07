@@ -4,8 +4,10 @@ services:
   redis:
     image: redis:latest
     container_name: redis
-    ports:
+    ports: # When running nativelly with cargo run
       - "127.0.0.1:6379:6379"
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
     networks:
       - private-net
 
