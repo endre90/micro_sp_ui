@@ -1197,6 +1197,40 @@ def find_path(start_frame: str, end_frame: str, adjacency: Dict[str, List[str]])
     return None
 
 
+# def calculate_transform_path(
+#     path: List[str],
+#     transform_graph: Dict[str, SPTransformStamped]
+# ) -> Optional[np.ndarray]:
+#     """Calculates the total transformation matrix along a path of frames."""
+#     matrices = []
+#     for i in range(len(path) - 1):
+#         frame_from = path[i]
+#         frame_to = path[i+1]
+
+#         # Determine direction: are we moving "down" (parent->child) or "up" (child->parent)?
+#         found_transform = False
+#         if frame_to in transform_graph and transform_graph[frame_to].parent_frame_id == frame_from:
+#             # Moving "down" the tree (parent -> child)
+#             transform = transform_graph[frame_to].transform
+#             matrices.append(sp_transform_to_matrix(transform))
+#             found_transform = True
+#         elif frame_from in transform_graph and transform_graph[frame_from].parent_frame_id == frame_to:
+#             # Moving "up" the tree (child -> parent), so we need the inverse
+#             transform = transform_graph[frame_from].transform
+#             matrix = sp_transform_to_matrix(transform)
+#             matrices.append(np.linalg.inv(matrix))
+#             found_transform = True
+
+#         if not found_transform:
+#              logging.error(f"Could not find transform between '{frame_from}' and '{frame_to}'")
+#              return None
+
+#     if not matrices:
+#         return np.identity(4)
+
+#     # Multiply all matrices in the chain. The order is correct as collected.
+#     return np.linalg.multi_dot(matrices)
+
 def calculate_transform_path(
     path: List[str],
     transform_graph: Dict[str, SPTransformStamped]
@@ -1225,11 +1259,21 @@ def calculate_transform_path(
              logging.error(f"Could not find transform between '{frame_from}' and '{frame_to}'")
              return None
 
-    if not matrices:
-        return np.identity(4)
+    # --- START OF MODIFIED LOGIC ---
 
-    # Multiply all matrices in the chain. The order is correct as collected.
-    return np.linalg.multi_dot(matrices)
+    if not matrices:
+        # This can happen if the path was empty or had only one frame (e.g., 'A' -> 'A').
+        # The main lookup tab already handles this, but this is good defensive coding.
+        return np.identity(4)
+    elif len(matrices) == 1:
+        # This is the fix: If there's only one matrix (a direct transform),
+        # just return it without trying to multiply.
+        return matrices[0]
+    else:
+        # If there are two or more matrices, multiply them all together.
+        return np.linalg.multi_dot(matrices)
+        
+    # --- END OF MODIFIED LOGIC ---
 
 
 def lookup_transform_python(
