@@ -1120,183 +1120,183 @@ def robot_tab(data: Dict[str, Optional[SPValueType]], all_keys: List[str]) -> No
     else:
         st.info("Select a TCP from the list above.")
 
-def sp_transform_to_matrix(transform: SPTransform) -> np.ndarray:
-    """Converts an SPTransform object to a 4x4 homogeneous transformation matrix."""
-    if not transform or not transform.translation or not transform.rotation:
-        return np.identity(4)
-    quat = [
-        transform.rotation.x or 0.0, transform.rotation.y or 0.0,
-        transform.rotation.z or 0.0, transform.rotation.w or 1.0,
-    ]
-    rotation_matrix = Rotation.from_quat(quat).as_matrix()
-    matrix = np.identity(4)
-    matrix[:3, :3] = rotation_matrix
-    matrix[:3, 3] = [
-        transform.translation.x or 0.0, transform.translation.y or 0.0,
-        transform.translation.z or 0.0,
-    ]
-    return matrix
+# def sp_transform_to_matrix(transform: SPTransform) -> np.ndarray:
+#     """Converts an SPTransform object to a 4x4 homogeneous transformation matrix."""
+#     if not transform or not transform.translation or not transform.rotation:
+#         return np.identity(4)
+#     quat = [
+#         transform.rotation.x or 0.0, transform.rotation.y or 0.0,
+#         transform.rotation.z or 0.0, transform.rotation.w or 1.0,
+#     ]
+#     rotation_matrix = Rotation.from_quat(quat).as_matrix()
+#     matrix = np.identity(4)
+#     matrix[:3, :3] = rotation_matrix
+#     matrix[:3, 3] = [
+#         transform.translation.x or 0.0, transform.translation.y or 0.0,
+#         transform.translation.z or 0.0,
+#     ]
+#     return matrix
 
-def matrix_to_sp_transform(matrix: np.ndarray) -> SPTransform:
-    """Converts a 4x4 homogeneous transformation matrix back to an SPTransform."""
-    translation = SPTranslation(x=matrix[0, 3], y=matrix[1, 3], z=matrix[2, 3])
-    quat = Rotation.from_matrix(matrix[:3, :3]).as_quat()
-    rotation = SPRotation(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
-    return SPTransform(translation=translation, rotation=rotation)
+# def matrix_to_sp_transform(matrix: np.ndarray) -> SPTransform:
+#     """Converts a 4x4 homogeneous transformation matrix back to an SPTransform."""
+#     translation = SPTranslation(x=matrix[0, 3], y=matrix[1, 3], z=matrix[2, 3])
+#     quat = Rotation.from_matrix(matrix[:3, :3]).as_quat()
+#     rotation = SPRotation(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+#     return SPTransform(translation=translation, rotation=rotation)
 
-def get_path_to_root(start_frame_id: str, transform_graph: Dict[str, SPTransformStamped]) -> Optional[List[str]]:
-    """Traces and returns the list of frame IDs from a start frame up to the root of its tree."""
-    path = [start_frame_id]
-    current_id = start_frame_id
-    for _ in range(100): # Limit iterations to prevent infinite loops
-        transform_stamped = transform_graph.get(current_id)
-        if not transform_stamped or not transform_stamped.parent_frame_id:
-            return path
-        current_id = transform_stamped.parent_frame_id
-        path.append(current_id)
-    logging.error(f"Path from '{start_frame_id}' is too long or contains a cycle.")
-    return None
+# def get_path_to_root(start_frame_id: str, transform_graph: Dict[str, SPTransformStamped]) -> Optional[List[str]]:
+#     """Traces and returns the list of frame IDs from a start frame up to the root of its tree."""
+#     path = [start_frame_id]
+#     current_id = start_frame_id
+#     for _ in range(100): # Limit iterations to prevent infinite loops
+#         transform_stamped = transform_graph.get(current_id)
+#         if not transform_stamped or not transform_stamped.parent_frame_id:
+#             return path
+#         current_id = transform_stamped.parent_frame_id
+#         path.append(current_id)
+#     logging.error(f"Path from '{start_frame_id}' is too long or contains a cycle.")
+#     return None
 
-def find_common_ancestor(frame1_id: str, frame2_id: str, transform_graph: Dict[str, SPTransformStamped]) -> Optional[str]:
-    """Finds the lowest common ancestor of two frames in the transform tree."""
-    path1 = get_path_to_root(frame1_id, transform_graph)
-    if not path1: return None
-    path2 = get_path_to_root(frame2_id, transform_graph)
-    if not path2: return None
+# def find_common_ancestor(frame1_id: str, frame2_id: str, transform_graph: Dict[str, SPTransformStamped]) -> Optional[str]:
+#     """Finds the lowest common ancestor of two frames in the transform tree."""
+#     path1 = get_path_to_root(frame1_id, transform_graph)
+#     if not path1: return None
+#     path2 = get_path_to_root(frame2_id, transform_graph)
+#     if not path2: return None
 
-    ancestors1_set = set(path1)
-    for ancestor in path2:
-        if ancestor in ancestors1_set:
-            return ancestor
-    return None
+#     ancestors1_set = set(path1)
+#     for ancestor in path2:
+#         if ancestor in ancestors1_set:
+#             return ancestor
+#     return None
 
-def get_transform_up_to_ancestor(start_frame_id: str, ancestor_frame_id: str, transform_graph: Dict[str, SPTransformStamped]) -> Optional[np.ndarray]:
-    """Calculates the transform from a start frame up to a known ancestor (T_start_ancestor)."""
-    if start_frame_id == ancestor_frame_id:
-        return np.identity(4)
-    matrices = []
-    current_id = start_frame_id
-    for _ in range(100):
-        if current_id == ancestor_frame_id:
-            return np.linalg.multi_dot(matrices) if matrices else np.identity(4)
-        tf_stamped = transform_graph.get(current_id)
-        if not tf_stamped: return None
-        matrices.append(np.linalg.inv(sp_transform_to_matrix(tf_stamped.transform)))
-        current_id = tf_stamped.parent_frame_id
-    return None
+# def get_transform_up_to_ancestor(start_frame_id: str, ancestor_frame_id: str, transform_graph: Dict[str, SPTransformStamped]) -> Optional[np.ndarray]:
+#     """Calculates the transform from a start frame up to a known ancestor (T_start_ancestor)."""
+#     if start_frame_id == ancestor_frame_id:
+#         return np.identity(4)
+#     matrices = []
+#     current_id = start_frame_id
+#     for _ in range(100):
+#         if current_id == ancestor_frame_id:
+#             return np.linalg.multi_dot(matrices) if matrices else np.identity(4)
+#         tf_stamped = transform_graph.get(current_id)
+#         if not tf_stamped: return None
+#         matrices.append(np.linalg.inv(sp_transform_to_matrix(tf_stamped.transform)))
+#         current_id = tf_stamped.parent_frame_id
+#     return None
 
-def get_transform_down_from_ancestor(child_frame_id: str, ancestor_frame_id: str, transform_graph: Dict[str, SPTransformStamped]) -> Optional[np.ndarray]:
-    """Calculates the transform from an ancestor down to a child frame (T_ancestor_child)."""
-    if child_frame_id == ancestor_frame_id:
-        return np.identity(4)
-    matrices_up = []
-    current_id = child_frame_id
-    for _ in range(100):
-        if current_id == ancestor_frame_id:
-            return np.linalg.multi_dot(reversed(matrices_up)) if matrices_up else np.identity(4)
-        tf_stamped = transform_graph.get(current_id)
-        if not tf_stamped: return None
-        matrices_up.append(sp_transform_to_matrix(tf_stamped.transform))
-        current_id = tf_stamped.parent_frame_id
-    return None
+# def get_transform_down_from_ancestor(child_frame_id: str, ancestor_frame_id: str, transform_graph: Dict[str, SPTransformStamped]) -> Optional[np.ndarray]:
+#     """Calculates the transform from an ancestor down to a child frame (T_ancestor_child)."""
+#     if child_frame_id == ancestor_frame_id:
+#         return np.identity(4)
+#     matrices_up = []
+#     current_id = child_frame_id
+#     for _ in range(100):
+#         if current_id == ancestor_frame_id:
+#             return np.linalg.multi_dot(reversed(matrices_up)) if matrices_up else np.identity(4)
+#         tf_stamped = transform_graph.get(current_id)
+#         if not tf_stamped: return None
+#         matrices_up.append(sp_transform_to_matrix(tf_stamped.transform))
+#         current_id = tf_stamped.parent_frame_id
+#     return None
 
-def lookup_transform_python(
-    parent_frame_id: str,
-    child_frame_id: str,
-    all_data: Dict[str, Optional[SPValueType]]
-) -> Optional[SPTransformStamped]:
-    """
-    Performs a transform lookup by finding a common ancestor in the tree and
-    chaining transforms up and then down. This function is designed to be called
-    from the Streamlit UI.
-    """
-    transform_graph: Dict[str, SPTransformStamped] = {
-        v.value.child_frame_id: v.value
-        for v in all_data.values()
-        if isinstance(v, TransformOrUnknown) and v.value and v.value.child_frame_id
-    }
+# def lookup_transform_python(
+#     parent_frame_id: str,
+#     child_frame_id: str,
+#     all_data: Dict[str, Optional[SPValueType]]
+# ) -> Optional[SPTransformStamped]:
+#     """
+#     Performs a transform lookup by finding a common ancestor in the tree and
+#     chaining transforms up and then down. This function is designed to be called
+#     from the Streamlit UI.
+#     """
+#     transform_graph: Dict[str, SPTransformStamped] = {
+#         v.value.child_frame_id: v.value
+#         for v in all_data.values()
+#         if isinstance(v, TransformOrUnknown) and v.value and v.value.child_frame_id
+#     }
 
-    all_frame_ids = set(transform_graph.keys())
-    all_frame_ids.update(tf.parent_frame_id for tf in transform_graph.values() if tf.parent_frame_id)
+#     all_frame_ids = set(transform_graph.keys())
+#     all_frame_ids.update(tf.parent_frame_id for tf in transform_graph.values() if tf.parent_frame_id)
 
-    if parent_frame_id not in all_frame_ids or child_frame_id not in all_frame_ids:
-        logging.warning(f"Parent '{parent_frame_id}' or child '{child_frame_id}' not in transform tree.")
-        return None
+#     if parent_frame_id not in all_frame_ids or child_frame_id not in all_frame_ids:
+#         logging.warning(f"Parent '{parent_frame_id}' or child '{child_frame_id}' not in transform tree.")
+#         return None
 
-    ancestor_id = find_common_ancestor(parent_frame_id, child_frame_id, transform_graph)
-    if not ancestor_id:
-        logging.error(f"No common ancestor found for '{parent_frame_id}' and '{child_frame_id}'.")
-        return None
+#     ancestor_id = find_common_ancestor(parent_frame_id, child_frame_id, transform_graph)
+#     if not ancestor_id:
+#         logging.error(f"No common ancestor found for '{parent_frame_id}' and '{child_frame_id}'.")
+#         return None
 
-    up_transform = get_transform_up_to_ancestor(parent_frame_id, ancestor_id, transform_graph)
-    if up_transform is None: return None
+#     up_transform = get_transform_up_to_ancestor(parent_frame_id, ancestor_id, transform_graph)
+#     if up_transform is None: return None
 
-    down_transform = get_transform_down_from_ancestor(child_frame_id, ancestor_id, transform_graph)
-    if down_transform is None: return None
+#     down_transform = get_transform_down_from_ancestor(child_frame_id, ancestor_id, transform_graph)
+#     if down_transform is None: return None
 
-    final_matrix = up_transform @ down_transform
-    final_transform = matrix_to_sp_transform(final_matrix)
+#     final_matrix = up_transform @ down_transform
+#     final_transform = matrix_to_sp_transform(final_matrix)
 
-    return SPTransformStamped(
-        active=True,
-        time_stamp=datetime.now(timezone.utc),
-        parent_frame_id=parent_frame_id,
-        child_frame_id=child_frame_id,
-        transform=final_transform,
-        metadata=MapOrUnknown(value=None)
-    )
+#     return SPTransformStamped(
+#         active=True,
+#         time_stamp=datetime.now(timezone.utc),
+#         parent_frame_id=parent_frame_id,
+#         child_frame_id=child_frame_id,
+#         transform=final_transform,
+#         metadata=MapOrUnknown(value=None)
+#     )
 
 
-# --- Tab 5: Lookup Tab (Your Streamlit UI Code) ---
-def lookup_tab(data: Dict[str, Optional[SPValueType]], display_spvalue_detail) -> None:
-    """Provides an interface to perform transform lookups directly in Python."""
-    st.header("Transform Lookup")
+# # --- Tab 5: Lookup Tab (Your Streamlit UI Code) ---
+# def lookup_tab(data: Dict[str, Optional[SPValueType]], display_spvalue_detail) -> None:
+#     """Provides an interface to perform transform lookups directly in Python."""
+#     st.header("Transform Lookup")
 
-    all_frame_ids = sorted(list(set(
-        id for value_obj in data.values() if isinstance(value_obj, TransformOrUnknown) and value_obj.value
-        for id in [value_obj.value.parent_frame_id, value_obj.value.child_frame_id] if id
-    )))
+#     all_frame_ids = sorted(list(set(
+#         id for value_obj in data.values() if isinstance(value_obj, TransformOrUnknown) and value_obj.value
+#         for id in [value_obj.value.parent_frame_id, value_obj.value.child_frame_id] if id
+#     )))
 
-    if not all_frame_ids:
-        st.warning("No transform variables with valid frame IDs found in the current state.")
-        return
+#     if not all_frame_ids:
+#         st.warning("No transform variables with valid frame IDs found in the current state.")
+#         return
 
-    frames_with_blank = [""] + all_frame_ids
-    if 'lookup_result' not in st.session_state:
-        st.session_state.lookup_result = None
+#     frames_with_blank = [""] + all_frame_ids
+#     if 'lookup_result' not in st.session_state:
+#         st.session_state.lookup_result = None
 
-    cols = st.columns(2)
-    parent_frame = cols[0].selectbox("Parent Frame:", options=frames_with_blank, key="lookup_parent_frame")
-    child_frame = cols[1].selectbox("Child Frame:", options=frames_with_blank, key="lookup_child_frame")
+#     cols = st.columns(2)
+#     parent_frame = cols[0].selectbox("Parent Frame:", options=frames_with_blank, key="lookup_parent_frame")
+#     child_frame = cols[1].selectbox("Child Frame:", options=frames_with_blank, key="lookup_child_frame")
 
-    if st.button("Lookup", type="primary", key="lookup_button"):
-        if not parent_frame or not child_frame:
-            st.error("Please select both a parent and a child frame.")
-            st.session_state.lookup_result = None
-        elif parent_frame == child_frame:
-            st.warning("Parent and child frames are the same. The result is an identity transform.")
-            identity_transform = SPTransform(
-                translation=SPTranslation(x=0.0, y=0.0, z=0.0),
-                rotation=SPRotation(x=0.0, y=0.0, z=0.0, w=1.0)
-            )
-            st.session_state.lookup_result = SPTransformStamped(
-                active=True, time_stamp=datetime.now(timezone.utc),
-                parent_frame_id=parent_frame, child_frame_id=child_frame,
-                transform=identity_transform, metadata=MapOrUnknown(value=None)
-            )
-        else:
-            with st.spinner(f"Calculating transform from '{parent_frame}' to '{child_frame}'..."):
-                result = lookup_transform_python(parent_frame, child_frame, data)
-                st.session_state.lookup_result = result
-                if result is None:
-                    st.error("Could not compute the transform. Check logs for details. Is there a valid path between the frames?")
-                else:
-                    st.success("Lookup successful!")
+#     if st.button("Lookup", type="primary", key="lookup_button"):
+#         if not parent_frame or not child_frame:
+#             st.error("Please select both a parent and a child frame.")
+#             st.session_state.lookup_result = None
+#         elif parent_frame == child_frame:
+#             st.warning("Parent and child frames are the same. The result is an identity transform.")
+#             identity_transform = SPTransform(
+#                 translation=SPTranslation(x=0.0, y=0.0, z=0.0),
+#                 rotation=SPRotation(x=0.0, y=0.0, z=0.0, w=1.0)
+#             )
+#             st.session_state.lookup_result = SPTransformStamped(
+#                 active=True, time_stamp=datetime.now(timezone.utc),
+#                 parent_frame_id=parent_frame, child_frame_id=child_frame,
+#                 transform=identity_transform, metadata=MapOrUnknown(value=None)
+#             )
+#         else:
+#             with st.spinner(f"Calculating transform from '{parent_frame}' to '{child_frame}'..."):
+#                 result = lookup_transform_python(parent_frame, child_frame, data)
+#                 st.session_state.lookup_result = result
+#                 if result is None:
+#                     st.error("Could not compute the transform. Check logs for details. Is there a valid path between the frames?")
+#                 else:
+#                     st.success("Lookup successful!")
 
-    if st.session_state.lookup_result:
-        st.subheader("Lookup Result")
-        display_obj = TransformOrUnknown(value=st.session_state.lookup_result)
-        display_spvalue_detail(display_obj, indent=0)
+#     if st.session_state.lookup_result:
+#         st.subheader("Lookup Result")
+#         display_obj = TransformOrUnknown(value=st.session_state.lookup_result)
+#         display_spvalue_detail(display_obj, indent=0)
 
 # --- Main Application (Modified) ---
 def main() -> None:
@@ -1314,13 +1314,14 @@ def main() -> None:
 
     logging.debug(f"UI data refreshed/retrieved. Keys: {len(all_keys)}, Deserialized items: {len(data)}")
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["View State", "Set State", "Details", "Robot", "Lookup"])
+    # tab1, tab2, tab3, tab4, tab5 = st.tabs(["View State", "Set State", "Details", "Robot", "Lookup"])
+    tab1, tab2, tab3, tab4 = st.tabs(["View State", "Set State", "Details", "Robot"])
 
     with tab1: state_viewer(data)
     with tab2: state_setter_impl(data, all_keys)
     with tab3: state_details(data, all_keys)
     with tab4: robot_tab(data, all_keys) # Call the updated robot_tab function
-    with tab5: lookup_tab(data)
+    # with tab5: lookup_tab(data)
 
 if __name__ == "__main__":
     main()
